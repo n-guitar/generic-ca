@@ -2,7 +2,7 @@
 
 
 ## 参考サイト
-|||
+|URL||
 |--|--|
 |https://docs.djangoproject.com/en/3.1/|Django 3.1|
 |https://channels.readthedocs.io/en/stable/index.html|Django Channels|
