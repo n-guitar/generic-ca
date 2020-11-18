@@ -1,0 +1,102 @@
+<!doctype html>
+
+  <html>
+    <head>
+      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+      <script src="node_modules/xterm/lib/xterm.js"></script>
+    </head>
+    <body>
+      <p>WebSocketサンプル</p>
+        <form>
+          <input id="textMessage" type="text">
+          <input onclick="sendMessage()" value="Send" type="button">
+          <input onclick="disconnect()" value="Disconnect" type="button">
+        </form>
+        <br />
+        <textarea id="messageTextArea" rows="10" cols="50"></textarea>
+        <div id="terminal"></div>
+      <script>
+        let webSocket = new WebSocket("ws://127.0.0.1:50080");
+        let messageTextArea = document.getElementById("messageTextArea");
+
+        webSocket.onopen = function(message){
+          messageTextArea.value += "Server connect...\n";
+        };
+
+        webSocket.onclose = function(message){
+          messageTextArea.value += "Server Disconnect...\n";
+        };
+
+        webSocket.onerror = function(message){
+          messageTextArea.value += "error...\n";
+        };
+
+        webSocket.onmessage = function(message){
+          messageTextArea.value += "Recieve From Server => "+message.data+"\n";
+        };
+        function sendMessage(){
+          var message = document.getElementById("textMessage");
+          messageTextArea.value += "Send to Server => "+message.value+"\n";
+          webSocket.send(message.value);
+          message.value = "";
+        }
+        function disconnect(){
+          webSocket.close();
+        }
+
+        let term = new Terminal({
+          rows: 30, // terminalの行数
+          cursorBlink: true, //カーソルの点滅
+          cursorStyle: 'underline', //カーソルをアンダーライン
+          RendererType: 'canvas', //  renderer typeをcanvas
+          theme:
+           {
+            // background: 'darkslategray',
+            // foreground: 'orange',
+          }
+        });
+        term.open(document.getElementById('terminal'));
+
+        function runFakeTerminal() {
+          if (term._initialized) {
+            return;
+          }
+
+          term._initialized = true;
+
+          term.prompt = () => {
+            term.write('\r\n$ ');
+          };
+
+          term.writeln('Welcome to xterm.js');
+          term.writeln('This is a local terminal emulation, without a real terminal in the back-end.');
+          term.writeln('Type some keys and commands to play around.');
+          term.writeln('');
+          term.prompt();
+
+          term.onKey(e => {
+            console.log(e)
+            const ev = e.domEvent
+            const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey
+
+            if (ev.keyCode === 13) {
+              webSocket.send('send');
+              webSocket.onmessage = function(message){
+                term.write(message.data);
+              };
+              // term.prompt();
+            } else if (ev.keyCode === 8) {
+              if (term._core.buffer.x > 2) {
+                term.write('\b \b');
+              }
+            } else if (printable) {
+              term.write(e.key);
+              webSocket.send(e.key);
+            }
+          });
+        }
+        runFakeTerminal()
+
+      </script>
+    </body>
+  </html>
